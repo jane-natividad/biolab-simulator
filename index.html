@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BioLab Simulator — Interactive In-Vitro Growth Experiments | Jane Natividad</title>
+<meta name="description" content="A virtual lab for simplified microbial growth experiments: logistic growth with documented nutrient and environment effects, simulated replicates, scenario comparison, experiment history and a parameter explorer.">
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --accent: #0071e3; --accent-soft: #e8f2ff; --accent-border: #cce2ff;
+    --ink: #1d1d1f; --ink-soft: #48484a; --muted: #6e6e73;
+    --hairline: #e5e5e7; --panel: #f5f5f7; --bg: #ffffff;
+    --good: #1a7f4e; --good-soft: #e7f6ee;
+    --warn: #9a6b00; --warn-soft: #fff6e0;
+    --bad: #b3261e; --bad-soft: #fdecea;
+  }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif; }
+  .wrap { max-width: 800px; margin: 0 auto; padding: 56px 24px 80px; }
+  .back-link { display: inline-block; font-size: 12px; color: var(--muted); text-decoration: none; margin-bottom: 22px; }
+  .back-link:hover { color: var(--accent); }
+  .eyebrow { font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 14px; }
+  h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 14px; line-height: 1.18; text-wrap: balance; }
+  h2 { font-size: 17px; font-weight: 650; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .byline { font-size: 12.8px; color: var(--muted); margin: 0 0 28px; }
+  .byline a { color: var(--muted); }
+  p { font-size: 14.5px; line-height: 1.62; color: var(--ink-soft); margin: 0 0 16px; }
+  .lede { font-size: 15.5px; line-height: 1.6; color: var(--ink); background: var(--panel); border-radius: 14px; padding: 20px 24px; margin: 0 0 28px; }
+  .section-label { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 36px 0 14px; }
+  .section-sub { font-size: 13px; color: var(--ink-soft); margin: -6px 0 14px; line-height: 1.55; }
+  .panel { background: var(--panel); border-radius: 14px; padding: 20px 22px; margin: 0 0 18px; }
+  .card { border: 1px solid var(--hairline); border-radius: 12px; padding: 14px 16px; background: #fff; }
+  .card.top { border-color: var(--accent-border); background: var(--accent-soft); }
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .pipeline { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+  .pipe-step { flex: 1 1 auto; min-width: 130px; background: var(--panel); border: 1px solid var(--hairline); border-radius: 10px; padding: 10px 12px; font-size: 11.3px; color: var(--ink-soft); line-height: 1.4; }
+  .pipe-step b { display: block; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin-bottom: 3px; }
+  .pipeline-note { font-size: 11.5px; color: var(--muted); margin: 0 0 24px; }
+  .btn { font-size: 12px; font-weight: 600; color: var(--accent); background: #fff; border: 1px solid var(--accent-border); border-radius: 8px; padding: 7px 13px; cursor: pointer; font-family: inherit; }
+  .btn:hover { background: var(--accent-soft); }
+  .btn.primary { color: #fff; background: var(--accent); border-color: var(--accent); }
+  .btn.primary:hover { background: #005bbf; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-size: 11.8px; color: var(--accent); background: #fff; border: 1px solid var(--accent-border); border-radius: 999px; padding: 6px 13px; cursor: pointer; font-family: inherit; text-align: left; }
+  .chip:hover { background: var(--accent-soft); }
+  .chip.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .tag { display: inline-block; font-size: 10.3px; font-weight: 700; letter-spacing: 0.04em; border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+  .tag.good { color: var(--good); background: var(--good-soft); }
+  .tag.warn { color: var(--warn); background: var(--warn-soft); }
+  .tag.bad { color: var(--bad); background: var(--bad-soft); }
+  .tag.info { color: var(--accent); background: var(--accent-soft); }
+  .tag.mute { color: var(--muted); background: var(--panel); }
+  .bar-track { height: 7px; background: var(--hairline); border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.25s ease; }
+  input[type=text], input[type=password], select, textarea { font-family: inherit; font-size: 13px; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--hairline); background: #fff; color: var(--ink); }
+  textarea { width: 100%; resize: vertical; line-height: 1.5; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .gov-grid { display: flex; flex-direction: column; gap: 10px; margin: 0 0 32px; }
+  .gov-item { display: flex; gap: 12px; border: 1px solid var(--hairline); border-radius: 12px; padding: 13px 16px; }
+  .gov-icon { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 700; }
+  .gov-text b { display: block; font-size: 12.8px; color: var(--ink); margin-bottom: 2px; }
+  .gov-text span { font-size: 12.2px; color: var(--ink-soft); line-height: 1.55; }
+  .not-list { font-size: 12.5px; color: var(--ink-soft); line-height: 1.7; margin: 0 0 32px; padding-left: 20px; }
+  .not-list li { margin-bottom: 6px; }
+  .why { font-size: 13.3px; font-style: italic; color: var(--ink); background: var(--panel); border-radius: 14px; padding: 18px 22px; margin: 0 0 32px; line-height: 1.58; }
+  .disclosure { font-size: 11.5px; line-height: 1.55; color: var(--muted); background: var(--panel); border-radius: 10px; padding: 12px 16px; margin: 0 0 32px; }
+  pre.out { white-space: pre-wrap; word-break: break-word; background: var(--panel); border-radius: 10px; padding: 14px 16px; font-size: 12px; line-height: 1.6; color: var(--ink-soft); font-family: ui-monospace, "SF Mono", Menlo, monospace; margin: 0; }
+  table.grid { width: 100%; border-collapse: collapse; font-size: 12.3px; }
+  table.grid th { text-align: left; font-size: 10.3px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 8px 8px; border-bottom: 1px solid var(--hairline); }
+  table.grid td { padding: 9px 8px; border-bottom: 1px solid var(--hairline); color: var(--ink-soft); vertical-align: top; }
+  .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  footer { border-top: 1px solid var(--hairline); padding-top: 20px; font-size: 12px; color: var(--muted); }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  @media (max-width: 480px) { .wrap { padding: 40px 16px 60px; } h1 { font-size: 24px; } }
+  .sl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 22px; }
+  .sl-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; }
+  .sl-row label { font-size: 12.6px; font-weight: 600; color: var(--ink); }
+  .sl-val { font-size: 12.5px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .sl-row input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+  .sl-hint { grid-column: 1 / -1; font-size: 11px; color: var(--muted); margin-top: -2px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 0 0 14px; }
+  .kpi { border: 1px solid var(--hairline); border-radius: 12px; padding: 12px 14px; background: #fff; }
+  .kpi .k-l { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .kpi .k-v { font-size: 22px; font-weight: 700; color: var(--ink); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .kpi .k-s { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .kpi.good .k-v { color: var(--good); } .kpi.warn .k-v { color: var(--warn); } .kpi.bad .k-v { color: var(--bad); }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 11.5px; color: var(--ink-soft); margin: 6px 0 0; }
+  .legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+  .bars .bar-row { display: grid; grid-template-columns: 210px 1fr 64px; gap: 10px; align-items: center; font-size: 12.5px; color: var(--ink-soft); margin: 7px 0; }
+  .bars .bar-wrap { position: relative; height: 16px; background: var(--panel); border-radius: 4px; }
+  .bars .bar-wrap .mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: #c7c7cc; }
+  .bars .bar-wrap span { position: absolute; top: 0; height: 100%; border-radius: 4px; }
+  .bars .bar-num { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .model-card { font-size: 12.8px; line-height: 1.65; color: var(--ink-soft); }
+  .model-card h3 { font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink); margin: 16px 0 6px; }
+  .model-card h3:first-child { margin-top: 0; }
+  .model-card code, .eq { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; background: var(--panel); border-radius: 5px; padding: 1px 6px; color: var(--ink); }
+  .eq { display: block; padding: 8px 12px; margin: 6px 0; white-space: pre-wrap; }
+  .row-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; }
+  .note { font-size: 11.8px; color: var(--muted); line-height: 1.5; }
+  @media (max-width: 620px) { .sl-grid { grid-template-columns: 1fr; } .bars .bar-row { grid-template-columns: 1fr 1fr 52px; } }
+
+  .strain { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: start; padding: 10px 0; border-bottom: 1px solid var(--hairline); }
+  .strain:last-child { border-bottom: none; }
+  .strain input[type=checkbox] { margin-top: 3px; accent-color: var(--accent); }
+  .strain .s-name { font-size: 13.3px; font-weight: 650; color: var(--ink); }
+  .strain .s-meta { font-size: 11.8px; color: var(--muted); }
+  .strain .s-edit { grid-column: 2; display: flex; flex-wrap: wrap; gap: 10px; font-size: 11.5px; color: var(--ink-soft); }
+  .strain .s-edit input { width: 64px; padding: 4px 6px; font-size: 12px; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .hist-item { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--hairline); font-size: 12.5px; }
+  .hist-item:last-child { border-bottom: none; }
+  .heat { display: grid; gap: 2px; }
+  .heat div { font-size: 10px; color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 3px; min-height: 26px; font-variant-numeric: tabular-nums; }
+  .heat .ax { color: var(--muted); background: none !important; }
+  .why-diff li { margin-bottom: 6px; }
+  .mode-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back-link" href="https://jane-natividad.github.io">&larr; Back to portfolio</a>
+  <div class="eyebrow">R&amp;D · Bioprocess · Simulation · Working Prototype</div>
+  <h1>BioLab Simulator: run growth experiments, compare scenarios, and see why the curves differ</h1>
+  <p class="byline">Jane Natividad &nbsp;&middot;&nbsp; <a href="https://jane-natividad.github.io">jane-natividad.github.io</a> &nbsp;&middot;&nbsp; <a href="https://github.com/jane-natividad/biolab-simulator">View on GitHub</a></p>
+
+  <div class="lede">A virtual bench for a hypothetical probiotic or microbial growth study. Choose fictional strains, set nutrient and environmental assumptions, and run simulated replicates. Then compare against a baseline and explore trade-offs. Everything is built on a <b>logistic growth model</b> with each added effect written out in the model card. It's a tool for reasoning about experimental design, not a prediction of how any real strain behaves.</div>
+
+  <div class="section-label">1 · Strains (fictional, editable)</div>
+  <div class="card" id="strains"></div>
+
+  <div class="section-label">2 · Experiment configuration</div>
+  <div class="mode-row" id="modes"></div>
+  <div class="panel"><div class="sl-grid" id="config"></div></div>
+  <div class="row-actions">
+    <button class="btn primary" id="run" type="button">Run simulation</button>
+    <button class="btn" id="set-base" type="button">Set this run as baseline</button>
+    <button class="btn" id="save" type="button">Save to history</button>
+    <button class="btn" id="reset" type="button">Reset to defaults</button>
+    <span class="note" id="run-note"></span>
+  </div>
+
+  <div class="section-label">3 · Results</div>
+  <div class="card"><div id="curve"></div><div class="legend" id="curve-legend"></div><p class="note" id="band-note" style="margin:8px 0 0"></p></div>
+  <div class="card scroll-x" style="margin-top:10px"><table class="grid" id="results"></table></div>
+  <div class="card" style="margin-top:10px" id="product-wrap"><div id="nutrient-chart"></div><p class="note" style="margin:6px 0 0">Nutrient depletion &amp; product formation mode: remaining nutrient (dashed) and product (dotted) for the first selected strain.</p></div>
+
+  <div class="section-label">4 · Compare against baseline</div>
+  <div class="card" id="compare"><p class="note">Click <b>Set this run as baseline</b>, change something, and run again to compare.</p></div>
+
+  <div class="section-label">5 · Trade-off experiments</div>
+  <p class="section-sub">Each preset starts from the current configuration as the baseline, changes one thing, runs, and saves both runs to history.</p>
+  <div class="row-actions" id="presets"></div>
+
+  <div class="section-label">6 · Experiment history</div>
+  <div class="card" id="history"><p class="note">No saved runs yet.</p></div>
+  <div class="row-actions" style="margin-top:10px"><button class="btn" id="compare-hist" type="button">Overlay selected runs</button><span class="note">Tick up to 4 saved runs.</span></div>
+  <div class="card" id="hist-chart-wrap" style="display:none"><div id="hist-chart"></div><div class="legend" id="hist-legend"></div></div>
+
+  <div class="section-label">7 · Experiment Explorer</div>
+  <p class="section-sub">Pick two parameters and ranges. The explorer runs every combination on a grid for the first selected strain, without measurement noise, so you see the model's response itself.</p>
+  <div class="panel">
+    <div class="sl-grid">
+      <div><label class="note">X parameter</label><select id="ex-x" style="width:100%"></select></div>
+      <div><label class="note">Y parameter</label><select id="ex-y" style="width:100%"></select></div>
+      <div><label class="note">Output</label><select id="ex-out" style="width:100%"><option value="final">Final population</option><option value="tthr">Time to threshold (h)</option></select></div>
+      <div style="align-self:end"><button class="btn primary" id="ex-run" type="button">Run explorer (8 × 8 = 64 scenarios)</button></div>
+    </div>
+  </div>
+  <div class="card" id="ex-heat-wrap" style="display:none"><div class="note" id="ex-title" style="margin-bottom:8px"></div><div class="heat" id="ex-heat"></div></div>
+  <div class="card bars" id="ex-sens" style="display:none;margin-top:10px"></div>
+  <div class="card scroll-x" id="ex-table-wrap" style="display:none;margin-top:10px"><table class="grid" id="ex-table"></table></div>
+  <p class="note" id="ex-note" style="display:none;margin-top:8px"></p>
+
+  <div class="section-label">Model card</div>
+  <div class="card model-card">
+    <h3>Growth equation</h3>
+    Logistic growth, solved numerically with a 4th-order Runge–Kutta step (Δt = 0.05 h):
+    <span class="eq">dN/dt = r_eff · N · (1 − N / K_eff)</span>
+    <h3>How nutrients and environment enter (assumptions, not biology)</h3>
+    <span class="eq">nutrient factor   f_S = S / (Ks + S)                     (Monod-type saturation; S = nutrient availability index 0–1)
+condition factor  f_E = exp( −(c − c_opt)² / (2·w²) )   (bell curve; c = condition index 0–1)
+r_eff = r · f_S · f_E          K_eff = K · f_S   (simple mode)</span>
+    The <b>condition index</b> is deliberately unitless. It is <i>not</i> temperature, pH or oxygen, and moving it doesn't predict how a real strain responds to any of those. Each strain's c_opt and tolerance width w are fictional settings that shape the curve.
+    <h3>Optional advanced mode: nutrient depletion &amp; product formation</h3>
+    <span class="eq">dN/dt = r · f_S(S) · f_E · N · (1 − N/K)
+dS/dt = −(1/Y) · dN/dt        (nutrient consumed in proportion to growth; Y = yield)
+dP/dt = α · dN/dt + β · N     (Luedeking–Piret: growth-associated α, non-growth-associated β)</span>
+    Here nutrient is a resource that runs out, so growth can stop below K.
+    <h3>Parameters</h3>
+    N₀ initial population · r baseline growth-rate parameter (1/h) · K carrying capacity · S nutrient availability · c condition index · Ks half-saturation · Y yield · α, β product coefficients · measurement CV · duration · replicates. Population is in arbitrary simulated units (think "×10⁶ cells/mL-equivalent"), not real counts.
+    <h3>What the replicate spread means</h3>
+    The model itself is deterministic. Replicates differ <b>only</b> through simulated <b>measurement variability</b>: each observation is the true value × a log-normal error with the chosen CV. The band shows the spread of simulated measurements, <i>not</i> biological or process uncertainty. With fewer than 5 replicates no band is drawn, because it would mean little.
+    <h3>Estimated vs true growth rate</h3>
+    The "estimated r" is fitted the way a lab often does it: the slope of ln(measured population) against time over the early-exponential window (5–40% of the highest population reached), for each replicate. Even with no noise it comes out below the true r_eff, because growth is already slowing inside that window. That's a real pitfall when estimating rates from logistic data. It sits next to the true r_eff, so you can see how measurement noise and window choice bias an estimate.
+    <h3>What calibration would require</h3>
+    Time-course measurements (for example OD or plate counts) for each real strain under controlled conditions. Fit r, K and (advanced mode) Ks, Y, α, β by nonlinear least squares, with replicate-level error. Then establish a measured relationship between real culture conditions and growth before replacing the unitless index. Finally, validate predictions on held-out experiments.
+    <h3>Why this isn't a prediction</h3>
+    Strains, parameters and response curves are invented. Real microbes show lag phases, death phases, diauxic shifts, inhibition, and responses to the environment that this model leaves out. Treat outputs as illustrations of the model's logic.
+  </div>
+
+  <div class="why">"The useful question isn't 'which strain wins?' It's 'which assumption made it win?' Every difference on this page traces back to a growth rate, a capacity, or an assumption you chose, and the comparison panel says which."</div>
+  <div class="disclosure">Prototype with synthetic data and fictional strains. Not calibrated to any organism, product or laboratory. Not a prediction of real strain performance.</div>
+  <footer>Built by <a href="https://jane-natividad.github.io">Jane Natividad</a>. No frameworks, no build step: a single static page and plain JavaScript, with a seeded random-number generator so runs are reproducible.</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  /* ---------- shared simulation + chart toolkit (no libraries) ---------- */
+  function makeRng(seed) { // mulberry32: fast, seedable, reproducible
+    var a = seed >>> 0;
+    return function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  function randNormal(rng) { var u = 0, v = 0; while (u === 0) u = rng(); while (v === 0) v = rng(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+  function randGamma(rng, shape, scale) { // Marsaglia–Tsang
+    if (shape < 1) { var g = randGamma(rng, shape + 1, scale); return g * Math.pow(rng(), 1 / shape); }
+    var d = shape - 1 / 3, c = 1 / Math.sqrt(9 * d);
+    for (;;) { var x, v; do { x = randNormal(rng); v = 1 + c * x; } while (v <= 0); v = v * v * v; var u = rng();
+      if (u < 1 - 0.0331 * x * x * x * x) return d * v * scale; if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v * scale; }
+  }
+  function randPoisson(rng, lambda) {
+    if (lambda <= 0) return 0;
+    if (lambda > 30) return Math.max(0, Math.round(lambda + Math.sqrt(lambda) * randNormal(rng)));
+    var L = Math.exp(-lambda), k = 0, p = 1; do { k++; p *= rng(); } while (p > L); return k - 1;
+  }
+  function quantile(sorted, q) { if (!sorted.length) return NaN; var i = (sorted.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i); return sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo); }
+  function fmt(n, d) { return Number(n).toLocaleString("en-US", { maximumFractionDigits: d == null ? 0 : d, minimumFractionDigits: d == null ? 0 : d }); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  // Chart: series = [{ points:[[x,y],...], color, width, dash, band:[[x,lo,hi],...] }], opts = {xLabel,yLabel,xMax,yMax,vlines:[{x,label,color}],hlines:[{y,label}]}
+  function lineChart(el, series, opts) {
+    var W = 720, H = 300, m = { l: 52, r: 16, t: 14, b: 40 };
+    var xs = [], ys = [];
+    series.forEach(function (s) { (s.points || []).forEach(function (p) { xs.push(p[0]); ys.push(p[1]); }); (s.band || []).forEach(function (b) { xs.push(b[0]); ys.push(b[2]); }); });
+    var xMax = opts.xMax || Math.max.apply(null, xs), yMax = opts.yMax || Math.max.apply(null, ys) * 1.08 || 1, xMin = opts.xMin || 0;
+    function X(x) { return m.l + (x - xMin) / (xMax - xMin) * (W - m.l - m.r); }
+    function Y(y) { return H - m.b - y / yMax * (H - m.t - m.b); }
+    var g = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="' + esc(opts.title || "chart") + '" style="display:block;max-width:100%;height:auto">';
+    for (var i = 0; i <= 4; i++) { var yv = yMax * i / 4; g += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(yv) + '" y2="' + Y(yv) + '" stroke="#ececef"/><text x="' + (m.l - 8) + '" y="' + (Y(yv) + 4) + '" text-anchor="end" font-size="11" fill="#6e6e73">' + (opts.yFmt ? opts.yFmt(yv) : fmt(yv)) + '</text>'; }
+    var ticks = opts.xTicks || 6;
+    for (i = 0; i <= ticks; i++) { var xv = xMin + (xMax - xMin) * i / ticks; g += '<text x="' + X(xv) + '" y="' + (H - m.b + 18) + '" text-anchor="middle" font-size="11" fill="#6e6e73">' + (opts.xFmt ? opts.xFmt(xv) : fmt(xv)) + '</text>'; }
+    if (opts.xLabel) g += '<text x="' + ((m.l + W - m.r) / 2) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="11" fill="#6e6e73">' + esc(opts.xLabel) + '</text>';
+    if (opts.yLabel) g += '<text x="12" y="' + ((m.t + H - m.b) / 2) + '" text-anchor="middle" font-size="11" fill="#6e6e73" transform="rotate(-90 12 ' + ((m.t + H - m.b) / 2) + ')">' + esc(opts.yLabel) + '</text>';
+    series.forEach(function (s) {
+      if (s.band && s.band.length) {
+        var up = s.band.map(function (b) { return X(b[0]) + "," + Y(b[2]); }).join(" "), dn = s.band.slice().reverse().map(function (b) { return X(b[0]) + "," + Y(b[1]); }).join(" ");
+        g += '<polygon points="' + up + " " + dn + '" fill="' + (s.bandColor || s.color) + '" opacity="' + (s.bandOpacity || 0.15) + '"/>';
+      }
+      if (s.area && s.points) { g += '<polygon points="' + X(s.points[0][0]) + "," + Y(0) + " " + s.points.map(function (p) { return X(p[0]) + "," + Y(p[1]); }).join(" ") + " " + X(s.points[s.points.length - 1][0]) + "," + Y(0) + '" fill="' + s.color + '" opacity="0.12"/>'; }
+      if (s.points) g += '<polyline fill="none" stroke="' + s.color + '" stroke-width="' + (s.width || 2.2) + '"' + (s.dash ? ' stroke-dasharray="' + s.dash + '"' : "") + ' points="' + s.points.map(function (p) { return X(p[0]) + "," + Y(p[1]); }).join(" ") + '"/>';
+    });
+    (opts.hlines || []).forEach(function (h) { g += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(h.y) + '" y2="' + Y(h.y) + '" stroke="' + (h.color || "#1d1d1f") + '" stroke-dasharray="4 4"/><text x="' + (W - m.r - 4) + '" y="' + (Y(h.y) - 6) + '" text-anchor="end" font-size="11" fill="' + (h.color || "#1d1d1f") + '">' + esc(h.label) + '</text>'; });
+    (opts.vlines || []).forEach(function (v) { if (v.x < xMin || v.x > xMax) return; g += '<line x1="' + X(v.x) + '" x2="' + X(v.x) + '" y1="' + m.t + '" y2="' + (H - m.b) + '" stroke="' + (v.color || "#b3261e") + '" stroke-dasharray="4 4"/><text x="' + (X(v.x) + 5) + '" y="' + (m.t + 12) + '" font-size="11" fill="' + (v.color || "#b3261e") + '">' + esc(v.label) + '</text>'; });
+    el.innerHTML = g + "</svg>";
+  }
+
+  // Histogram of values with optional marker lines
+  function histogram(el, values, opts) {
+    var W = 720, H = 240, m = { l: 44, r: 16, t: 14, b: 40 }, bins = opts.bins || 30;
+    var lo = opts.min != null ? opts.min : Math.min.apply(null, values), hi = opts.max != null ? opts.max : Math.max.apply(null, values);
+    if (hi === lo) hi = lo + 1;
+    var w = (hi - lo) / bins, counts = new Array(bins).fill(0);
+    values.forEach(function (v) { var b = Math.min(bins - 1, Math.max(0, Math.floor((v - lo) / w))); counts[b]++; });
+    var cMax = Math.max.apply(null, counts) || 1;
+    function X(x) { return m.l + (x - lo) / (hi - lo) * (W - m.l - m.r); }
+    var g = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="' + esc(opts.title || "histogram") + '" style="display:block;max-width:100%;height:auto">';
+    counts.forEach(function (c, i) {
+      var x0 = lo + i * w, h = c / cMax * (H - m.t - m.b), col = opts.colorFn ? opts.colorFn(x0 + w / 2) : "#0071e3";
+      g += '<rect x="' + (X(x0) + 0.5) + '" y="' + (H - m.b - h) + '" width="' + Math.max(0, X(x0 + w) - X(x0) - 1) + '" height="' + h + '" fill="' + col + '" opacity="0.85"/>';
+    });
+    for (var i = 0; i <= 5; i++) { var xv = lo + (hi - lo) * i / 5; g += '<text x="' + X(xv) + '" y="' + (H - m.b + 18) + '" text-anchor="middle" font-size="11" fill="#6e6e73">' + (opts.xFmt ? opts.xFmt(xv) : fmt(xv)) + '</text>'; }
+    if (opts.xLabel) g += '<text x="' + ((m.l + W - m.r) / 2) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="11" fill="#6e6e73">' + esc(opts.xLabel) + '</text>';
+    (opts.marks || []).forEach(function (mk, k) { if (mk.x < lo || mk.x > hi) return; g += '<line x1="' + X(mk.x) + '" x2="' + X(mk.x) + '" y1="' + m.t + '" y2="' + (H - m.b) + '" stroke="' + (mk.color || "#1d1d1f") + '" stroke-dasharray="4 4"/><text x="' + (X(mk.x) + 4) + '" y="' + (m.t + 12 + k * 14) + '" font-size="11" fill="' + (mk.color || "#1d1d1f") + '">' + esc(mk.label) + '</text>'; });
+    el.innerHTML = g + "</svg>";
+  }
+
+  // Slider helper: builds a labelled range input bound to state[key]
+  function slider(container, cfg, state, onChange) {
+    var row = document.createElement("div"); row.className = "sl-row";
+    var id = cfg.id || cfg.key;
+    row.innerHTML = '<label for="sl-' + id + '">' + esc(cfg.label) + '</label><span class="sl-val" id="sv-' + id + '"></span><input type="range" id="sl-' + id + '" min="' + cfg.min + '" max="' + cfg.max + '" step="' + cfg.step + '" value="' + state[cfg.key] + '">' + (cfg.hint ? '<div class="sl-hint">' + esc(cfg.hint) + '</div>' : "");
+    var input = row.querySelector("input"), val = row.querySelector(".sl-val");
+    function show() { val.textContent = cfg.fmt ? cfg.fmt(state[cfg.key]) : state[cfg.key]; }
+    input.addEventListener("input", function () { state[cfg.key] = parseFloat(input.value); show(); onChange(); });
+    show(); container.appendChild(row);
+    return { set: function (v) { state[cfg.key] = v; input.value = v; show(); } };
+  }
+
+  var COLORS = ["#0071e3", "#1a7f4e", "#b3261e", "#8e44ad", "#d97706"];
+  var DEFAULT_STRAINS = [
+    { id: "A12", name: "Strain A-12", tag: "fast grower, modest capacity", r: 0.9, K: 80, Ks: 0.15, cOpt: 0.5, w: 0.18, Y: 120, alpha: 0.25, beta: 0.01, on: true },
+    { id: "B07", name: "Strain B-07", tag: "slower, high capacity", r: 0.5, K: 140, Ks: 0.25, cOpt: 0.6, w: 0.25, Y: 180, alpha: 0.15, beta: 0.03, on: true },
+    { id: "C33", name: "Strain C-33", tag: "narrow condition tolerance", r: 0.75, K: 110, Ks: 0.10, cOpt: 0.35, w: 0.10, Y: 150, alpha: 0.3, beta: 0.005, on: false }
+  ];
+  var DEFAULT_CFG = { N0: 1, S: 0.6, c: 0.5, cv: 0.08, hours: 24, reps: 12, thr: 40, rMult: 1, kMult: 1 };
+  var strains = JSON.parse(JSON.stringify(DEFAULT_STRAINS)), cfg = Object.assign({}, DEFAULT_CFG), mode = "simple";
+  var baseline = null, current = null, history = [], runCount = 0;
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- model ---------- */
+  function factors(st, c) {
+    var fS = c.S / (st.Ks + c.S), fE = Math.exp(-Math.pow(c.c - st.cOpt, 2) / (2 * st.w * st.w));
+    return { fS: fS, fE: fE, rEff: st.r * c.rMult * fS * fE, kEff: st.K * c.kMult * (mode === "simple" ? fS : 1) };
+  }
+  function solve(st, c) { // returns true trajectory sampled hourly-ish (every 0.5 h)
+    var dt = 0.05, steps = Math.round(c.hours / dt), N = c.N0, S = c.S, P = 0, out = [], f = factors(st, c);
+    var r = st.r * c.rMult, K = st.K * c.kMult;
+    function deriv(N, S) {
+      if (mode === "simple") return f.kEff > 0 ? [f.rEff * N * (1 - N / f.kEff), 0] : [0, 0];
+      var fS = Math.max(0, S) / (st.Ks + Math.max(0, S)), g = r * fS * f.fE * N * (1 - N / K);
+      return [g, -g / st.Y];
+    }
+    for (var i = 0; i <= steps; i++) {
+      var t = i * dt;
+      if (i % 10 === 0) out.push({ t: t, N: N, S: S, P: P });
+      var k1 = deriv(N, S), k2 = deriv(N + dt / 2 * k1[0], S + dt / 2 * k1[1]), k3 = deriv(N + dt / 2 * k2[0], S + dt / 2 * k2[1]), k4 = deriv(N + dt * k3[0], S + dt * k3[1]);
+      var dN = dt / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]), dS = dt / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
+      P += st.alpha * dN + st.beta * N * dt;
+      N += dN; S = Math.max(0, S + dS);
+    }
+    return { traj: out, f: f };
+  }
+  function timeTo(traj, thr) { for (var i = 1; i < traj.length; i++) if (traj[i].N >= thr) { var a = traj[i - 1], b = traj[i]; return a.t + (thr - a.N) / (b.N - a.N) * (b.t - a.t); } return Infinity; }
+  function fitRate(ts, ys) { // OLS of ln(y) on t within 5–40% of the highest population reached (true N picks the window)
+    var xs = [], ls = [], top = Math.max.apply(null, ys.trueN);
+    for (var i = 0; i < ts.length; i++) if (ys.trueN[i] >= 0.05 * top && ys.trueN[i] <= 0.4 * top && ys.obs[i] > 0) { xs.push(ts[i]); ls.push(Math.log(ys.obs[i])); }
+    if (xs.length < 3) return NaN;
+    var mx = xs.reduce(function (a, b) { return a + b; }) / xs.length, my = ls.reduce(function (a, b) { return a + b; }) / ls.length, sxy = 0, sxx = 0;
+    for (i = 0; i < xs.length; i++) { sxy += (xs[i] - mx) * (ls[i] - my); sxx += (xs[i] - mx) * (xs[i] - mx); }
+    return sxy / sxx;
+  }
+  function runStrain(st, c, seed) {
+    var sol = solve(st, c), traj = sol.traj, rng = makeRng(seed), sigma = Math.sqrt(Math.log(1 + c.cv * c.cv));
+    var hourly = traj.filter(function (p) { return Math.abs(p.t - Math.round(p.t)) < 1e-6; });
+    var ts = hourly.map(function (p) { return p.t; }), trueN = hourly.map(function (p) { return p.N; });
+    var reps = [], rates = [], tthr = [];
+    for (var r = 0; r < c.reps; r++) {
+      var obs = trueN.map(function (n) { return c.cv > 0 ? n * Math.exp(sigma * randNormal(rng) - sigma * sigma / 2) : n; });
+      reps.push(obs); rates.push(fitRate(ts, { obs: obs, trueN: trueN }));
+      var tt = Infinity; for (var i = 0; i < obs.length; i++) if (obs[i] >= c.thr) { tt = ts[i]; break; } tthr.push(tt);
+    }
+    var band = ts.map(function (t, i) { var col = reps.map(function (o) { return o[i]; }).sort(function (a, b) { return a - b; }); return [t, quantile(col, 0.05), quantile(col, 0.95)]; });
+    var meanObs = ts.map(function (t, i) { var s = 0; reps.forEach(function (o) { s += o[i]; }); return [t, s / reps.length]; });
+    var validRates = rates.filter(function (x) { return isFinite(x); }), mr = validRates.length ? validRates.reduce(function (a, b) { return a + b; }) / validRates.length : NaN;
+    var sdr = validRates.length > 1 ? Math.sqrt(validRates.reduce(function (a, b) { return a + (b - mr) * (b - mr); }, 0) / (validRates.length - 1)) : NaN;
+    var finals = reps.map(function (o) { return o[o.length - 1]; }).sort(function (a, b) { return a - b; });
+    return { strain: st, f: sol.f, traj: traj, ts: ts, trueN: trueN, band: band, meanObs: meanObs, reps: reps,
+      final: trueN[trueN.length - 1], max: Math.max.apply(null, trueN), tthr: timeTo(traj, c.thr), tthrObs: tthr,
+      estR: mr, sdR: sdr, finalLo: quantile(finals, 0.05), finalHi: quantile(finals, 0.95) };
+  }
+  function runExperiment(label) {
+    runCount++;
+    var sel = strains.filter(function (s) { return s.on; });
+    var c = Object.assign({}, cfg);
+    return { id: runCount, label: label || ("Run " + runCount), cfg: c, mode: mode, strains: JSON.parse(JSON.stringify(sel)), results: sel.map(function (st, i) { return runStrain(st, c, 1000 + i * 97 + Math.round(c.N0 * 13)); }) };
+  }
+
+  /* ---------- UI: strains ---------- */
+  function renderStrains() {
+    $("strains").innerHTML = strains.map(function (s, i) {
+      return '<div class="strain"><input type="checkbox" data-i="' + i + '"' + (s.on ? " checked" : "") + ' aria-label="Select ' + s.name + '"><div><div class="s-name"><span class="swatch" style="background:' + COLORS[i] + '"></span>' + s.name + ' <span class="s-meta">· ' + s.tag + '</span></div>'
+        + '<div class="s-edit">' + [["r", "r (1/h)"], ["K", "K"], ["Ks", "Ks"], ["cOpt", "c_opt"], ["w", "tolerance w"], ["Y", "yield Y"]].map(function (f) { return '<label>' + f[1] + ' <input type="number" step="any" data-i="' + i + '" data-f="' + f[0] + '" value="' + s[f[0]] + '"></label>'; }).join("") + "</div></div></div>";
+    }).join("");
+    $("strains").querySelectorAll('input[type=checkbox]').forEach(function (cb) { cb.addEventListener("change", function () { strains[+cb.dataset.i].on = cb.checked; run(); }); });
+    $("strains").querySelectorAll('input[type=number]').forEach(function (inp) { inp.addEventListener("change", function () { var v = parseFloat(inp.value); if (isFinite(v) && v > 0 || inp.dataset.f === "cOpt") strains[+inp.dataset.i][inp.dataset.f] = v; run(); }); });
+  }
+  /* ---------- UI: config ---------- */
+  var CFG = [
+    { key: "N0", label: "Initial population N₀", min: 0.1, max: 20, step: 0.1, fmt: function (v) { return v.toFixed(1); } },
+    { key: "rMult", label: "Growth-rate parameter (× strain r)", min: 0.3, max: 2, step: 0.05, fmt: function (v) { return "×" + v.toFixed(2); } },
+    { key: "kMult", label: "Carrying capacity (× strain K)", min: 0.3, max: 2, step: 0.05, fmt: function (v) { return "×" + v.toFixed(2); } },
+    { key: "S", label: "Nutrient availability index", min: 0.02, max: 1, step: 0.02, fmt: function (v) { return v.toFixed(2); }, hint: "0 = none, 1 = abundant. Enters via f_S = S/(Ks+S)." },
+    { key: "c", label: "Condition index (unitless)", min: 0, max: 1, step: 0.01, fmt: function (v) { return v.toFixed(2); }, hint: "A normalized stand-in, not temperature or pH." },
+    { key: "cv", label: "Measurement variability (CV)", min: 0, max: 0.5, step: 0.01, fmt: function (v) { return Math.round(v * 100) + "%"; } },
+    { key: "hours", label: "Duration", min: 6, max: 72, step: 1, fmt: function (v) { return v + " h"; } },
+    { key: "reps", label: "Simulated replicates", min: 1, max: 50, step: 1 },
+    { key: "thr", label: "Population threshold", min: 1, max: 150, step: 1, hint: "For 'time to threshold'." }
+  ];
+  var ctl = {};
+  CFG.forEach(function (c) { ctl[c.key] = slider($("config"), c, cfg, debouncedRun); });
+  var tmr = null; function debouncedRun() { clearTimeout(tmr); tmr = setTimeout(run, 150); }
+  [["simple", "Simple logistic mode"], ["advanced", "Nutrient depletion & product mode"]].forEach(function (m) {
+    var b = document.createElement("button"); b.type = "button"; b.className = "chip" + (m[0] === mode ? " on" : ""); b.textContent = m[1];
+    b.addEventListener("click", function () { mode = m[0]; $("modes").querySelectorAll(".chip").forEach(function (x) { x.classList.toggle("on", x === b); }); run(); });
+    $("modes").appendChild(b);
+  });
+
+  /* ---------- rendering ---------- */
+  function hmt(x) { return isFinite(x) ? x.toFixed(1) + " h" : "not reached"; }
+  function renderRun(R) {
+    var series = [], legend = [];
+    R.results.forEach(function (res) {
+      var i = strains.findIndex(function (s) { return s.id === res.strain.id; }), col = COLORS[i];
+      if (R.cfg.reps >= 5 && R.cfg.cv > 0) series.push({ band: res.band, color: col, bandOpacity: 0.14 });
+      series.push({ points: res.traj.map(function (p) { return [p.t, p.N]; }), color: col });
+      if (R.cfg.cv > 0) series.push({ points: res.meanObs, color: col, dash: "2 3", width: 1.3 });
+      legend.push('<span><i style="background:' + col + '"></i>' + res.strain.name + "</span>");
+    });
+    if (baseline && baseline !== R) baseline.results.forEach(function (res) { series.push({ points: res.traj.map(function (p) { return [p.t, p.N]; }), color: "#8e8e93", dash: "6 4", width: 1.4 }); });
+    if (baseline && baseline !== R) legend.push('<span><i style="background:#8e8e93"></i>Baseline (dashed grey)</span>');
+    legend.push('<span><i style="background:#1d1d1f;height:1px"></i>Solid = model, dotted = mean of simulated measurements</span>');
+    if (!R.results.length) { $("curve").innerHTML = '<p class="note">Select at least one strain.</p>'; $("results").innerHTML = ""; return; }
+    lineChart($("curve"), series, { xMax: R.cfg.hours, xLabel: "Time (h)", yLabel: "Simulated population (arbitrary units)", hlines: [{ y: R.cfg.thr, label: "Threshold " + R.cfg.thr, color: "#6e6e73" }], title: "Growth curves" });
+    $("curve-legend").innerHTML = legend.join("");
+    $("band-note").textContent = R.cfg.cv === 0 ? "Measurement variability is 0%, so every replicate is identical and no band is shown." : R.cfg.reps < 5 ? "Fewer than 5 replicates: no band is drawn because it wouldn't be interpretable." : "Shaded band = 5th–95th percentile of " + R.cfg.reps + " simulated replicate measurements. It reflects measurement variability only, not biological uncertainty.";
+    var adv = R.mode === "advanced";
+    var rows = [["Strain", adv ? "Initial r_eff (true)" : "r_eff (true)", "Estimated r ± SD", adv ? "K (space limit)" : "K_eff", "Final population", "Final, 90% measurement range", "Max", "Time to " + R.cfg.thr]];
+    R.results.forEach(function (res) {
+      rows.push(["<b style='color:var(--ink)'>" + res.strain.name + "</b>", res.f.rEff.toFixed(3) + "/h", isFinite(res.estR) ? res.estR.toFixed(3) + (isFinite(res.sdR) ? " ± " + res.sdR.toFixed(3) : "") : "n/a", fmt(res.f.kEff, 1), fmt(res.final, 1), R.cfg.cv > 0 && R.cfg.reps >= 5 ? fmt(res.finalLo, 1) + "–" + fmt(res.finalHi, 1) : "—", fmt(res.max, 1), hmt(res.tthr)]);
+    });
+    $("results").innerHTML = rows.map(function (r, i) { return "<tr>" + r.map(function (c) { return i ? "<td>" + c + "</td>" : "<th>" + c + "</th>"; }).join("") + "</tr>"; }).join("");
+    var pw = $("product-wrap");
+    if (R.mode === "advanced" && R.results.length) {
+      pw.style.display = ""; var res = R.results[0], maxP = Math.max.apply(null, res.traj.map(function (p) { return p.P; })) || 1;
+      lineChart($("nutrient-chart"), [{ points: res.traj.map(function (p) { return [p.t, p.N]; }), color: COLORS[0] }, { points: res.traj.map(function (p) { return [p.t, p.S * 100]; }), color: "#d97706", dash: "6 4" }, { points: res.traj.map(function (p) { return [p.t, p.P / maxP * 100]; }), color: "#8e44ad", dash: "2 3" }],
+        { xMax: R.cfg.hours, xLabel: "Time (h)", yLabel: "Population · nutrient % · product (scaled)", title: "Nutrient and product" });
+    } else pw.style.display = "none";
+  }
+  function renderCompare() {
+    if (!baseline || !current || baseline === current) { $("compare").innerHTML = '<p class="note">' + (baseline ? "Baseline set (" + esc(baseline.label) + "). Change something and run again to compare." : "Click <b>Set this run as baseline</b>, change something, and run again to compare.") + "</p>"; return; }
+    var rows = [["Strain", "Final pop. (base → now)", "Time to threshold", "r_eff", "K_eff"]], why = [];
+    current.results.forEach(function (res) {
+      var b = baseline.results.find(function (x) { return x.strain.id === res.strain.id; }); if (!b) return;
+      rows.push(["<b style='color:var(--ink)'>" + res.strain.name + "</b>", fmt(b.final, 1) + " → " + fmt(res.final, 1), hmt(b.tthr) + " → " + hmt(res.tthr), b.f.rEff.toFixed(3) + " → " + res.f.rEff.toFixed(3), fmt(b.f.kEff, 1) + " → " + fmt(res.f.kEff, 1)]);
+      var parts = [];
+      if (current.mode !== baseline.mode) { why.push("<li><b>" + res.strain.name + ":</b> the model itself changed (" + baseline.mode + " → " + current.mode + "). In advanced mode the nutrient is used up, so growth can stop below K and r_eff falls over time. The two runs aren't comparable parameter by parameter.</li>"); return; }
+      function pct(a, c) { return (c / a - 1) * 100; }
+      var dr = pct(b.f.rEff, res.f.rEff), dk = pct(b.f.kEff, res.f.kEff);
+      if (Math.abs(dr) > 0.5) parts.push("effective growth rate " + (dr > 0 ? "up " : "down ") + Math.abs(dr).toFixed(0) + "%" + explainR(b, res));
+      if (Math.abs(dk) > 0.5) parts.push("carrying capacity " + (dk > 0 ? "up " : "down ") + Math.abs(dk).toFixed(0) + "%" + (Math.abs(pct(b.f.fS, res.f.fS)) > 0.5 && mode === "simple" ? " (nutrient factor)" : " (capacity setting)"));
+      if (current.cfg.cv !== baseline.cfg.cv) parts.push("measurement CV changed " + Math.round(baseline.cfg.cv * 100) + "% → " + Math.round(current.cfg.cv * 100) + "%, which widens or narrows the measured spread but leaves the model curve unchanged");
+      if (current.cfg.N0 !== baseline.cfg.N0) parts.push("starting population " + baseline.cfg.N0 + " → " + current.cfg.N0 + " shifts the curve in time");
+      why.push("<li><b>" + res.strain.name + ":</b> " + (parts.length ? parts.join("; ") : "no model inputs changed; any difference is measurement noise") + ".</li>");
+    });
+    $("compare").innerHTML = '<div class="scroll-x"><table class="grid">' + rows.map(function (r, i) { return "<tr>" + r.map(function (c) { return i ? "<td>" + c + "</td>" : "<th>" + c + "</th>"; }).join("") + "</tr>"; }).join("") + '</table></div><div style="margin-top:12px;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600">Why do these differ? (from the model equations)</div><ul class="why-diff" style="font-size:12.8px;color:var(--ink-soft);padding-left:18px;margin:6px 0 0">' + why.join("") + "</ul>";
+  }
+  function explainR(b, n) {
+    var bits = [];
+    if (Math.abs(n.f.fS / b.f.fS - 1) > 0.005) bits.push("nutrient factor " + b.f.fS.toFixed(2) + "→" + n.f.fS.toFixed(2));
+    if (Math.abs(n.f.fE / b.f.fE - 1) > 0.005) bits.push("condition factor " + b.f.fE.toFixed(2) + "→" + n.f.fE.toFixed(2));
+    if (current.cfg.rMult !== baseline.cfg.rMult) bits.push("growth-rate setting ×" + baseline.cfg.rMult + "→×" + current.cfg.rMult);
+    return bits.length ? " (" + bits.join(", ") + ")" : "";
+  }
+  function renderHistory() {
+    if (!history.length) { $("history").innerHTML = '<p class="note">No saved runs yet.</p>'; return; }
+    $("history").innerHTML = history.map(function (h, i) {
+      return '<div class="hist-item"><input type="checkbox" data-h="' + i + '" aria-label="Select ' + esc(h.label) + '"><div><b>' + esc(h.label) + '</b> <span class="note">· ' + h.mode + " · " + h.strains.map(function (s) { return s.name; }).join(", ") + " · S=" + h.cfg.S + ", c=" + h.cfg.c + ", r×" + h.cfg.rMult + ", K×" + h.cfg.kMult + ", CV " + Math.round(h.cfg.cv * 100) + "%</span></div><span class='note'>" + h.results.map(function (r) { return r.strain.name.split(" ")[1] + ": " + fmt(r.final, 0); }).join(" · ") + "</span></div>";
+    }).join("");
+  }
+
+  /* ---------- actions ---------- */
+  function run(label) { current = runExperiment(typeof label === "string" ? label : null); renderRun(current); renderCompare(); $("run-note").textContent = current.label + " · " + current.results.length + " strain(s) · " + current.cfg.reps + " replicate(s)"; }
+  $("run").addEventListener("click", function () { run(); });
+  $("set-base").addEventListener("click", function () { if (!current) run(); baseline = current; baseline.label = "Baseline (" + current.label + ")"; renderRun(current); renderCompare(); });
+  $("save").addEventListener("click", function () { if (current) { history.push(current); renderHistory(); } });
+  $("reset").addEventListener("click", function () { strains = JSON.parse(JSON.stringify(DEFAULT_STRAINS)); cfg = Object.assign({}, DEFAULT_CFG); renderStrains(); rebindCfg(); run(); });
+  function rebindCfg() { $("config").innerHTML = ""; CFG.forEach(function (c) { ctl[c.key] = slider($("config"), c, cfg, debouncedRun); }); }
+
+  var PRESETS = [
+    { name: "A · Change nutrient availability", f: function () { cfg.S = Math.max(0.05, +(cfg.S / 3).toFixed(2)); }, tag: "nutrient ÷3" },
+    { name: "B · Change growth-rate parameter", f: function () { cfg.rMult = +(cfg.rMult * 1.5).toFixed(2); }, tag: "r ×1.5" },
+    { name: "C · Change carrying capacity", f: function () { cfg.kMult = +(cfg.kMult * 0.6).toFixed(2); }, tag: "K ×0.6" },
+    { name: "D · Increase measurement variability", f: function () { cfg.cv = Math.min(0.5, +(cfg.cv * 3 + 0.05).toFixed(2)); }, tag: "CV up" },
+    { name: "E · Compare two strains, same assumptions", f: function () { strains.forEach(function (s, i) { s.on = i < 2; }); renderStrains(); }, tag: "A-12 vs B-07" }
+  ];
+  PRESETS.forEach(function (p) {
+    var b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = p.name;
+    b.addEventListener("click", function () {
+      run("Baseline for " + p.name.split(" · ")[0]); baseline = current; history.push(current);
+      p.f(); rebindCfg(); run(p.name.split(" · ")[0] + " · " + p.tag); history.push(current); renderHistory();
+      $("curve").scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    $("presets").appendChild(b);
+  });
+  $("compare-hist").addEventListener("click", function () {
+    var picks = Array.prototype.slice.call($("history").querySelectorAll("input:checked")).slice(0, 4).map(function (cb) { return history[+cb.dataset.h]; });
+    if (!picks.length) return;
+    var dashes = ["", "6 4", "2 3", "10 3 2 3"], series = [], legend = [];
+    picks.forEach(function (h, k) { h.results.forEach(function (res) { var i = strains.findIndex(function (s) { return s.id === res.strain.id; }); series.push({ points: res.traj.map(function (p) { return [p.t, p.N]; }), color: COLORS[i], dash: dashes[k] }); }); legend.push('<span><i style="background:#1d1d1f' + (k ? ";opacity:" + (1 - k * 0.2) : "") + '"></i>' + esc(h.label) + (dashes[k] ? " (" + ["solid", "dashed", "dotted", "dash-dot"][k] + ")" : " (solid)") + "</span>"); });
+    $("hist-chart-wrap").style.display = ""; lineChart($("hist-chart"), series, { xMax: Math.max.apply(null, picks.map(function (h) { return h.cfg.hours; })), xLabel: "Time (h)", yLabel: "Simulated population", title: "Saved runs" }); $("hist-legend").innerHTML = legend.join("");
+  });
+
+  /* ---------- explorer ---------- */
+  var EXP = { S: { label: "Nutrient availability", lo: 0.05, hi: 1 }, c: { label: "Condition index", lo: 0, hi: 1 }, rMult: { label: "Growth-rate (× r)", lo: 0.4, hi: 1.8 }, kMult: { label: "Capacity (× K)", lo: 0.4, hi: 1.8 }, N0: { label: "Initial population", lo: 0.2, hi: 10 } };
+  Object.keys(EXP).forEach(function (k, i) { ["ex-x", "ex-y"].forEach(function (id, j) { var o = document.createElement("option"); o.value = k; o.textContent = EXP[k].label; if ((j === 0 && k === "S") || (j === 1 && k === "c")) o.selected = true; $(id).appendChild(o); }); });
+  function evalPoint(st, over, out) {
+    var c = Object.assign({}, cfg, over, { cv: 0, reps: 1 });
+    var res = solve(st, c);
+    return out === "final" ? res.traj[res.traj.length - 1].N : timeTo(res.traj, c.thr);
+  }
+  $("ex-run").addEventListener("click", function () {
+    var st = strains.find(function (s) { return s.on; }) || strains[0], X = $("ex-x").value, Y = $("ex-y").value, out = $("ex-out").value;
+    if (X === Y) { alertNote("Pick two different parameters."); return; }
+    var n = 8, xs = [], ys = [], grid = [], vals = [];
+    for (var i = 0; i < n; i++) { xs.push(EXP[X].lo + (EXP[X].hi - EXP[X].lo) * i / (n - 1)); ys.push(EXP[Y].lo + (EXP[Y].hi - EXP[Y].lo) * i / (n - 1)); }
+    for (var yi = n - 1; yi >= 0; yi--) { var row = []; for (var xi = 0; xi < n; xi++) { var o = {}; o[X] = xs[xi]; o[Y] = ys[yi]; var v = evalPoint(st, o, out); row.push(v); vals.push({ x: xs[xi], y: ys[yi], v: v }); } grid.push(row); }
+    var finite = vals.map(function (d) { return d.v; }).filter(isFinite), lo = Math.min.apply(null, finite), hi = Math.max.apply(null, finite);
+    function color(v) { if (!isFinite(v)) return "#c7c7cc"; var t = (v - lo) / ((hi - lo) || 1); if (out === "tthr") t = 1 - t; return "hsl(" + (210 - 0 * t) + "," + (40 + 45 * t) + "%," + (78 - 40 * t) + "%)"; }
+    var h = $("ex-heat"); h.style.gridTemplateColumns = "70px repeat(" + n + ", 1fr)";
+    var html = "";
+    grid.forEach(function (row, r) { html += '<div class="ax">' + ys[n - 1 - r].toFixed(2) + "</div>" + row.map(function (v) { return '<div style="background:' + color(v) + '">' + (isFinite(v) ? v.toFixed(out === "final" ? 0 : 1) : "—") + "</div>"; }).join(""); });
+    html += '<div class="ax"></div>' + xs.map(function (x) { return '<div class="ax">' + x.toFixed(2) + "</div>"; }).join("");
+    h.innerHTML = html; $("ex-heat-wrap").style.display = "";
+    $("ex-title").innerHTML = "<b>" + st.name + "</b> · " + (out === "final" ? "final population at " + cfg.hours + " h" : "hours to reach " + cfg.thr + " (— = not reached)") + " · rows: " + EXP[Y].label + " (high at top) · columns: " + EXP[X].label + ". Darker = better.";
+    // one-way sensitivity on chosen output around current config (±25%)
+    var keys = ["S", "c", "rMult", "kMult", "N0"], base0 = evalPoint(st, {}, out), sens = keys.map(function (k) {
+      var lo2 = {}, hi2 = {}; lo2[k] = Math.max(EXP[k].lo, cfg[k] * 0.75); hi2[k] = Math.min(k === "S" || k === "c" ? 1 : 99, cfg[k] * 1.25);
+      return { k: k, lo: evalPoint(st, lo2, out), hi: evalPoint(st, hi2, out) };
+    });
+    var mx = Math.max.apply(null, sens.map(function (s) { return Math.max(Math.abs((isFinite(s.lo) ? s.lo : base0) - base0), Math.abs((isFinite(s.hi) ? s.hi : base0) - base0)); })) || 1;
+    sens.sort(function (a, b) { return Math.max(Math.abs(b.hi - base0), Math.abs(b.lo - base0)) - Math.max(Math.abs(a.hi - base0), Math.abs(a.lo - base0)); });
+    $("ex-sens").style.display = ""; $("ex-sens").innerHTML = '<div class="note" style="margin-bottom:6px">One-way sensitivity: each parameter −25% (left) and +25% (right) from the current setting; the output is ' + (out === "final" ? "final population" : "time to threshold") + ' (current: ' + (isFinite(base0) ? base0.toFixed(1) : "not reached") + ").</div>" + sens.map(function (s) {
+      function seg(v, side) { if (!isFinite(v)) return ""; var d = v - base0, w = Math.min(50, Math.abs(d) / mx * 50); var left = d >= 0 ? 50 : 50 - w; return '<span style="left:' + left + "%;width:" + w + "%;background:" + (side ? "var(--accent)" : "#8fb8ef") + '"></span>'; }
+      return '<div class="bar-row"><span>' + EXP[s.k].label + '</span><div class="bar-wrap"><div class="mid"></div>' + seg(s.lo, 0) + seg(s.hi, 1) + '</div><span class="bar-num">' + (isFinite(s.lo) ? s.lo.toFixed(0) : "—") + " / " + (isFinite(s.hi) ? s.hi.toFixed(0) : "—") + "</span></div>";
+    }).join("");
+    var top = vals.filter(function (d) { return isFinite(d.v); }).sort(function (a, b) { return out === "final" ? b.v - a.v : a.v - b.v; }).slice(0, 8);
+    $("ex-table").innerHTML = "<tr><th>#</th><th>" + EXP[X].label + "</th><th>" + EXP[Y].label + "</th><th>" + (out === "final" ? "Final population" : "Time to threshold (h)") + "</th></tr>" + top.map(function (d, i) { return "<tr><td>" + (i + 1) + "</td><td>" + d.x.toFixed(2) + "</td><td>" + d.y.toFixed(2) + "</td><td><b>" + d.v.toFixed(out === "final" ? 1 : 1) + "</b></td></tr>"; }).join("");
+    $("ex-table-wrap").style.display = ""; $("ex-note").style.display = ""; $("ex-note").innerHTML = "<b>What comes from where:</b> the shape of this surface comes from the model equations (logistic growth, f_S, f_E). Its location and scale come from your assumptions: the strain's r, K, Ks, c_opt and w, and the ranges chosen here. Different assumptions would move it.";
+  });
+  function alertNote(t) { $("ex-title").textContent = t; $("ex-heat-wrap").style.display = ""; }
+
+  window.__biolab = { solve: solve, runStrain: runStrain, getStrains: function () { return strains; }, getCfg: function () { return cfg; }, setMode: function (m) { mode = m; } };
+  renderStrains(); run();
+})();
+</script>
+</body>
+</html>
